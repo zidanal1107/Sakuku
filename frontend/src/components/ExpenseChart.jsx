@@ -1,38 +1,64 @@
 // frontend/src/components/ExpenseChart.jsx
-// import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { formatRupiah } from "../utils/formatCurrency";
 
 export default function ExpenseChart({ transactions }) {
-  // 1. Filter data berdasarkan tipe 'expense' dari database
+  // 1. Filter transaksi hanya untuk tipe pengeluaran ('expense')
   const expenseTransactions = transactions.filter(
-    t => t.type && t.type.toString().toLowerCase() === 'expense' // 👈 Diganti 'expense'
+    (t) =>
+      t.type &&
+      (t.type.toString().toLowerCase() === "expense" ||
+        t.type.toString().toLowerCase() === "keluar"),
   );
 
-  // 2. Kelompokkan nominal berdasarkan kategori
-  const categoryMap = expenseTransactions.reduce((acc, curr) => {
-    const rawCategory = curr.category || 'Lainnya';
-    // Menyeragamkan huruf kapital di awal (contoh: "makanan" -> "Makanan")
-    const cleanCategory = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1).toLowerCase();
-    
-    acc[cleanCategory] = (acc[cleanCategory] || 0) + Number(curr.amount);
+  // 2. Kelompokkan total pengeluaran per tanggal (YYYY-MM-DD)
+  const dateMap = expenseTransactions.reduce((acc, curr) => {
+    const rawDate = curr.createdAt || curr.date;
+    if (!rawDate) return acc;
+
+    // Ambil string format YYYY-MM-DD
+    const dateKey = rawDate.split("T")[0];
+    acc[dateKey] = (acc[dateKey] || 0) + Number(curr.amount || 0);
     return acc;
   }, {});
 
-  // 3. Ubah format data agar sesuai kebutuhan Recharts
-  const chartData = Object.keys(categoryMap).map(category => ({
-    name: category,
-    value: categoryMap[category]
-  }));
-
-  // Palette warna modern untuk masing-masing kategori pengeluaran
-  const COLORS = {
-    'Makanan': '#ef4444',       // Merah (Rose-500)
-    'Transportasi': '#f59e0b',  // Jingga (Amber-500)
-    'Hiburan': '#3b82f6',       // Biru (Blue-500)
-    'Lainnya': '#64748b'        // Abu-abu (Slate-500)
+  // Helper untuk memformat tanggal singkat di Sumbu X (Contoh: "23 Jul")
+  const formatDateLabel = (dateStr) => {
+    try {
+      const [year, month, day] = dateStr.split("-").map(Number);
+      const dateObj = new Date(year, month - 1, day);
+      return new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "short",
+      }).format(dateObj);
+    } catch {
+      return dateStr;
+    }
   };
 
-  const DEFAULT_COLOR = '#a855f7'; // Ungu jika ada kategori baru
+  // 3. Ubah objek ke format Array & urutkan dari tanggal paling lama ke paling baru (kronologis)
+  const chartData = Object.keys(dateMap)
+    .sort((a, b) => new Date(a) - new Date(b))
+    .map((dateKey) => ({
+      rawDate: dateKey,
+      displayDate: formatDateLabel(dateKey),
+      totalAmount: dateMap[dateKey],
+    }));
+
+  // Helper penyederhana angka nominal di Sumbu Y (misal: 50000 -> 50rb)
+  const formatYAxis = (value) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}jt`;
+    if (value >= 1000) return `${Math.round(value / 1000)}rb`;
+    return value;
+  };
 
   if (chartData.length === 0) {
     return (
@@ -44,41 +70,68 @@ export default function ExpenseChart({ transactions }) {
   }
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-full">
-      <h3 className="text-lg font-bold text-slate-800 mb-2">Visualisasi Boros</h3>
-      <p className="text-xs text-slate-400 mb-6">Kategori pengeluaran terbesar Anda saat ini.</p>
-      
-      <div className="w-full h-64">
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-full flex flex-col">
+      <div className="mb-6">
+        <h3 className="text-lg font-bold text-slate-800">Pengeluaran Harian</h3>
+        <p className="text-xs text-slate-400">
+          Statistik total pengeluaran Anda per tanggal.
+        </p>
+      </div>
+
+      <div className="w-full h-64 mt-auto">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="45%"
-              innerRadius={60} // Membuat bentuk donut chart agar lebih modern
-              outerRadius={80}
-              paddingAngle={4}
-              dataKey="value"
-            >
-              {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={COLORS[entry.name] || DEFAULT_COLOR} 
-                />
-              ))}
-            </Pie>
-            <Tooltip 
-              formatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
-              contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+          <BarChart
+            data={chartData}
+            margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+          >
+            {/* Garis grid latar belakang */}
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#f1f5f9"
             />
-            <Legend 
-              iconType="circle" 
-              layout="horizontal" 
-              verticalAlign="bottom" 
-              align="center"
-              wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+
+            {/* Sumbu X (Bawah) - Tanggal */}
+            <XAxis
+              dataKey="displayDate"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "#94a3b8", fontSize: 12 }}
             />
-          </PieChart>
+
+            {/* Sumbu Y (Samping) - Nominal */}
+            <YAxis
+              tickFormatter={formatYAxis}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "#94a3b8", fontSize: 11 }}
+            />
+
+            {/* Pop-up Info Detail saat Bar Ditekan / Hover */}
+            <Tooltip
+              formatter={(value) => [formatRupiah(value), "Total Keluar"]}
+              labelFormatter={(label, payload) => {
+                if (payload && payload.length) {
+                  return `Tanggal: ${payload[0].payload.rawDate}`;
+                }
+                return label;
+              }}
+              contentStyle={{
+                borderRadius: "12px",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+                fontSize: "12px",
+              }}
+            />
+
+            {/* Batang Diagram */}
+            <Bar
+              dataKey="totalAmount"
+              fill="#f43f5e" // Warna merah rose modern
+              radius={[6, 6, 0, 0]} // Sudut membulat di bagian atas batang
+              maxBarSize={40}
+            />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
