@@ -99,7 +99,9 @@ export default function ExpenseChart({ transactions }) {
               tick={{ fill: "#64748b", fontSize: 11 }}
             />
 
+            {/* 📝 Ubah cursor jadi transparent agar area bayangan kolom tidak muncul */}
             <Tooltip
+              cursor={{ fill: "transparent" }}
               formatter={(value) => [formatRupiah(value), "Total Keluar"]}
               labelFormatter={(label, payload) => {
                 if (payload && payload.length) {
@@ -113,14 +115,17 @@ export default function ExpenseChart({ transactions }) {
                 borderRadius: "12px",
                 border: "1px solid #334155",
                 fontSize: "12px",
+                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
               }}
             />
 
+            {/* 📝 Berikan gaya hover khusus (efek terang/sedikit redup) tepat pada batang saja */}
             <Bar
               dataKey="totalAmount"
               fill="#f43f5e"
               radius={[6, 6, 0, 0]}
               maxBarSize={40}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
             />
           </BarChart>
         </ResponsiveContainer>
