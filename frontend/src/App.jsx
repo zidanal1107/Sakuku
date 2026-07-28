@@ -7,17 +7,31 @@ import ExpenseChart from "./components/ExpenseChart";
 import Login from "./components/Login";
 import Register from "./components/Register";
 
-// Mengimpor Custom Hook dan Utilitas Format Rupiah
 import { useTransactions } from "./hooks/useTransactions";
 import { formatRupiah } from "./utils/formatCurrency";
 
 export default function App() {
-  // 1. State Autentikasi User & Pilihan Tampilan Form ('login' / 'register')
-  const [user, setUser] = useState(null);
-  const [authView, setAuthView] = useState("login");
-  const [isInitializing, setIsInitializing] = useState(true);
+  // 1. State User (Gunakan Lazy State Initialization agar ESLint tidak error)
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("sakuku_user");
+    const token = localStorage.getItem("sakuku_token");
 
-  // 2. Custom Hook Transaksi
+    if (savedUser && token) {
+      try {
+        return JSON.parse(savedUser);
+      } catch {
+        localStorage.removeItem("sakuku_user");
+        localStorage.removeItem("sakuku_token");
+        return null;
+      }
+    }
+    return null;
+  });
+
+  // 2. State Aplikasi Lainnya
+  const [authView, setAuthView] = useState("login");
+
+  // 3. Hook Transaksi
   const {
     transactions,
     loading,
@@ -26,22 +40,6 @@ export default function App() {
     addTransaction,
     deleteTransaction,
   } = useTransactions();
-
-  // 3. Cek Sesi SakuKu di LocalStorage saat Pertama Kali Aplikasi Dimuat
-  useEffect(() => {
-    const savedUser = localStorage.getItem("sakuku_user");
-    const token = localStorage.getItem("sakuku_token");
-
-    if (savedUser && token) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem("sakuku_user");
-        localStorage.removeItem("sakuku_token");
-      }
-    }
-    setIsInitializing(false);
-  }, []);
 
   // 4. Ambil Data Transaksi Hanya Jika User Sudah Login
   useEffect(() => {
@@ -71,16 +69,6 @@ export default function App() {
     .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
 
   const totalSaldo = totalMasuk - totalKeluar;
-
-  // Tampilan Loader Awal Saat Memeriksa Sesi Login
-  if (isInitializing) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 dark:border-emerald-500 mr-3"></div>
-        <span>Memuat SakuKu...</span>
-      </div>
-    );
-  }
 
   // =========================================================
   // CONDITIONAL RENDERING 1: JIKA USER BELUM LOGIN
