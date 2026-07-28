@@ -1,15 +1,23 @@
 // frontend/src/App.jsx
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import TransactionForm from "./components/TransactionForm";
 import TransactionList from "./components/TransactionList";
 import ExpenseChart from "./components/ExpenseChart";
+import Login from "./components/Login";
+import Register from "./components/Register";
 
 // Mengimpor Custom Hook dan Utilitas Format Rupiah
 import { useTransactions } from "./hooks/useTransactions";
 import { formatRupiah } from "./utils/formatCurrency";
 
 export default function App() {
+  // 1. State Autentikasi User & Pilihan Tampilan Form ('login' / 'register')
+  const [user, setUser] = useState(null);
+  const [authView, setAuthView] = useState("login");
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // 2. Custom Hook Transaksi
   const {
     transactions,
     loading,
@@ -19,25 +27,91 @@ export default function App() {
     deleteTransaction,
   } = useTransactions();
 
+  // 3. Cek Sesi SakuKu di LocalStorage saat Pertama Kali Aplikasi Dimuat
   useEffect(() => {
-    fetchTransactions();
+    const savedUser = localStorage.getItem("sakuku_user");
+    const token = localStorage.getItem("sakuku_token");
+
+    if (savedUser && token) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem("sakuku_user");
+        localStorage.removeItem("sakuku_token");
+      }
+    }
+    setIsInitializing(false);
   }, []);
 
-  // Kalkulasi total keuangan
+  // 4. Ambil Data Transaksi Hanya Jika User Sudah Login
+  useEffect(() => {
+    if (user) {
+      fetchTransactions();
+    }
+  }, [user, fetchTransactions]);
+
+  // 5. Handler Sesi Auth
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("sakuku_token");
+    localStorage.removeItem("sakuku_user");
+    setUser(null);
+  };
+
+  // 6. Kalkulasi total keuangan
   const totalMasuk = transactions
     .filter((t) => t.type && t.type.toString().toLowerCase() === "income")
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
 
   const totalKeluar = transactions
     .filter((t) => t.type && t.type.toString().toLowerCase() === "expense")
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
 
   const totalSaldo = totalMasuk - totalKeluar;
 
+  // Tampilan Loader Awal Saat Memeriksa Sesi Login
+  if (isInitializing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 dark:border-emerald-500 mr-3"></div>
+        <span>Memuat SakuKu...</span>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // CONDITIONAL RENDERING 1: JIKA USER BELUM LOGIN
+  // =========================================================
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex items-center justify-center p-4 transition-colors duration-200">
+        <div className="w-full max-w-md">
+          {authView === "login" ? (
+            <Login
+              onLoginSuccess={handleLoginSuccess}
+              switchToRegister={() => setAuthView("register")}
+            />
+          ) : (
+            <Register
+              onRegisterSuccess={() => setAuthView("login")}
+              switchToLogin={() => setAuthView("login")}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // CONDITIONAL RENDERING 2: JIKA USER SUDAH LOGIN (DASHBOARD)
+  // =========================================================
   return (
-    // 📝 PERBAIKAN: Latar belakang utama disesuaikan untuk mode gelap
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-200">
-      <Navbar />
+      {/* Passing profil user dan handler logout ke Navbar */}
+      <Navbar user={user} onLogout={handleLogout} />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Banner Alert jika terjadi Error Koneksi Backend */}
@@ -47,7 +121,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Ringkasan Saldo Utama (Kartu-kartu disesuaikan ke mode gelap) */}
+        {/* Ringkasan Saldo Utama */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Dompet SakuKu (Net) */}
           <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm transition-colors">

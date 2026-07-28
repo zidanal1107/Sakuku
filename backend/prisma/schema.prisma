@@ -12,12 +12,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Pastikan model Expense ini juga ada di dalam file ini ya!
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expenses  Expense[]
+
+  @@map("users")
+}
+
 model Expense {
-  id          Int      @id @default(autoincrement())
-  title       String   
-  amount      Float    
-  type        String   
-  category    String   
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  amount    Float
+  type      String
+  category  String
+  createdAt DateTime @default(now())
+
+  @@map("expenses")
 }
