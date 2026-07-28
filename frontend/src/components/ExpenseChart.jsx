@@ -1,28 +1,36 @@
 // frontend/src/components/ExpenseChart.jsx
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
 import { formatRupiah } from "../utils/formatCurrency";
 
 export default function ExpenseChart({ transactions }) {
-  const expenseTransactions = transactions.filter(
-    (t) =>
-      t.type &&
-      (t.type.toString().toLowerCase() === "expense" ||
-        t.type.toString().toLowerCase() === "keluar"),
-  );
-
-  const dateMap = expenseTransactions.reduce((acc, curr) => {
+  // 1. Kelompokkan transaksi per tanggal untuk 'income' dan 'expense'
+  const dateMap = transactions.reduce((acc, curr) => {
     const rawDate = curr.createdAt || curr.date;
     if (!rawDate) return acc;
+
     const dateKey = rawDate.split("T")[0];
-    acc[dateKey] = (acc[dateKey] || 0) + Number(curr.amount || 0);
+    if (!acc[dateKey]) {
+      acc[dateKey] = { income: 0, expense: 0 };
+    }
+
+    const typeStr = (curr.type || "").toString().toLowerCase();
+    const amount = Number(curr.amount || 0);
+
+    if (typeStr === "income" || typeStr === "masuk") {
+      acc[dateKey].income += amount;
+    } else if (typeStr === "expense" || typeStr === "keluar") {
+      acc[dateKey].expense += amount;
+    }
+
     return acc;
   }, {});
 
@@ -39,12 +47,14 @@ export default function ExpenseChart({ transactions }) {
     }
   };
 
+  // 2. Susun data chart dan urutkan berdasarkan tanggal
   const chartData = Object.keys(dateMap)
     .sort((a, b) => new Date(a) - new Date(b))
     .map((dateKey) => ({
       rawDate: dateKey,
       displayDate: formatDateLabel(dateKey),
-      totalAmount: dateMap[dateKey],
+      income: dateMap[dateKey].income,
+      expense: dateMap[dateKey].expense,
     }));
 
   const formatYAxis = (value) => {
@@ -56,8 +66,8 @@ export default function ExpenseChart({ transactions }) {
   if (chartData.length === 0) {
     return (
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm h-full flex flex-col justify-center items-center text-slate-400 dark:text-slate-500 py-12 transition-colors">
-        <p className="text-3xl mb-2">📊</p>
-        <p className="text-sm">Belum ada data pengeluaran untuk dianalisis.</p>
+        <p className="text-3xl mb-2">📈</p>
+        <p className="text-sm">Belum ada data keuangan untuk dianalisis.</p>
       </div>
     );
   }
@@ -66,16 +76,17 @@ export default function ExpenseChart({ transactions }) {
     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm h-full flex flex-col transition-colors">
       <div className="mb-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white">
-          Tren Pengeluaran Harian
+          Tren Keuangan Harian
         </h3>
         <p className="text-xs text-slate-400 dark:text-slate-500">
-          Statistik total pengeluaran Anda per tanggal.
+          Garis perbandingan pergerakan uang masuk dan keluar dari waktu ke
+          waktu.
         </p>
       </div>
 
-      <div className="w-full h-64 mt-auto">
+      <div className="w-full h-72 mt-auto">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
+          <LineChart
             data={chartData}
             margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
           >
@@ -99,10 +110,11 @@ export default function ExpenseChart({ transactions }) {
               tick={{ fill: "#64748b", fontSize: 11 }}
             />
 
-            {/* 📝 Ubah cursor jadi transparent agar area bayangan kolom tidak muncul */}
             <Tooltip
-              cursor={{ fill: "transparent" }}
-              formatter={(value) => [formatRupiah(value), "Total Keluar"]}
+              formatter={(value, name) => [
+                formatRupiah(value),
+                name === "income" ? "Uang Masuk" : "Uang Keluar",
+              ]}
               labelFormatter={(label, payload) => {
                 if (payload && payload.length) {
                   return `Tanggal: ${payload[0].payload.rawDate}`;
@@ -119,15 +131,39 @@ export default function ExpenseChart({ transactions }) {
               }}
             />
 
-            {/* 📝 Berikan gaya hover khusus (efek terang/sedikit redup) tepat pada batang saja */}
-            <Bar
-              dataKey="totalAmount"
-              fill="#f43f5e"
-              radius={[6, 6, 0, 0]}
-              maxBarSize={40}
-              className="cursor-pointer hover:opacity-80 transition-opacity"
+            <Legend
+              verticalAlign="top"
+              align="right"
+              wrapperStyle={{ paddingBottom: "10px", fontSize: "12px" }}
+              formatter={(value) => (
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                  {value === "income" ? "Uang Masuk" : "Uang Keluar"}
+                </span>
+              )}
             />
-          </BarChart>
+
+            {/* Garis 1: Uang Masuk (Hijau Emerald dengan Lekukan Mulus) */}
+            <Line
+              type="monotone"
+              name="income"
+              dataKey="income"
+              stroke="#10b981"
+              strokeWidth={3}
+              dot={{ r: 4, fill: "#10b981" }}
+              activeDot={{ r: 6, strokeWidth: 2 }}
+            />
+
+            {/* Garis 2: Uang Keluar (Merah Rose dengan Lekukan Mulus) */}
+            <Line
+              type="monotone"
+              name="expense"
+              dataKey="expense"
+              stroke="#f43f5e"
+              strokeWidth={3}
+              dot={{ r: 4, fill: "#f43f5e" }}
+              activeDot={{ r: 6, strokeWidth: 2 }}
+            />
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </div>
