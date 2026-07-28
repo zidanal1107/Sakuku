@@ -1,51 +1,46 @@
-# 💰 SakuKu - Aplikasi Pencatat Keuangan Pribadi
+# 🚂 SakuKu Backend API
 
-**SakuKu** adalah aplikasi web sederhana yang dibuat untuk membantu siapa saja mencatat uang masuk (pemasukan) dan uang keluar (pengeluaran) sehari-hari secara digital. Tidak ada lagi catatan manual di kertas yang gampang hilang!
-
-Aplikasi ini dibangun menggunakan teknologi modern standar industri, namun tetap dibuat sesederhana mungkin agar kodenya rapi dan mudah dirawat.
+Repositori ini berisi kode layanan _backend_ untuk aplikasi **SakuKu (Pencatat Keuangan Pribadi)**. Dibuat menggunakan Node.js, Express, Prisma ORM, dan MariaDB, serta dilengkapi sistem keamanan berbasis JSON Web Token (JWT).
 
 ---
 
-## 🚀 Fitur Utama & Peta Jalan Proyek
+## 🛠️ Spesifikasi Teknologi
 
-Kita membangun aplikasi ini secara bertahap. Berikut adalah status perkembangan SakuKu saat ini:
-
-### 🟢 Fase 1 & 2: Fondasi & Tampilan Pintar (SELESAI ✅)
-
-- **Catat Transaksi:** Memasukkan judul, nominal uang (_Float_), tipe (_income/expense_), dan kategori transaksi.
-- **Hitung Saldo Otomatis:** Menampilkan sisa uang bersih (Net), total pemasukan, dan total pengeluaran secara real-time.
-- **Lini Masa Terpisah (Date Grouping):** Riwayat transaksi otomatis terpisah berdasarkan hari/tanggal kronologis (`createdAt`) agar rapi.
-- **Grafik Pai (Pie Chart):** Visualisasi interaktif menggunakan Recharts untuk melihat kategori pengeluaran apa yang paling dominan.
-- **Hapus Data:** Fitur menghapus catatan jika terjadi salah input yang langsung sinkron ke database.
-
-### 🟡 Fase 3: Fitur Keamanan & Multi-Akun (Rencana Selanjutnya ⏳)
-
-- **Kunci Akun (Login):** Setiap pengguna punya akun sendiri (Email & Password) dengan JWT Authentication, sehingga catatan keuangan tidak akan bercampur dengan orang lain.
+- **Runtime Environment:** Node.js
+- **Framework Web:** Express.js
+- **Database:** MariaDB
+- **ORM:** Prisma
+- **Autentikasi:** JSON Web Token (JWT) & Bcrypt.js (Hash Password)
+- **CORS:** Enabling Cross-Origin Resource Sharing untuk Frontend
 
 ---
 
-## 🛠️ Teknologi yang Digunakan (Susunan Mesin)
+## 🔑 Fitur & Fitur Keamanan API
 
-Bagi orang non-IT, bayangkan teknologi ini seperti bagian-bagian dari sebuah mobil:
-
-- **Frontend (React + Vite + Tailwind CSS):** Ini adalah **Body & Dashboard Mobil**. Bagian luar yang dilihat, disentuh, dan digunakan oleh pengguna untuk mengisi formulir dan melihat grafik saldo serta diagram lingkaran.
-- **Backend (Node.js + Express):** Ini adalah **Mesin Mobil**. Bagian dalam yang bekerja di balik layar untuk memproses perintah, menerima data dari dashboard, lalu menyalurkannya ke gudang.
-- **Database (MariaDB):** Ini adalah **Bagasi/Gudang Penyimpanan**. Tempat fisik aman untuk menyimpan semua data catatan keuangan agar tidak hilang saat mesin komputer dimatikan.
-- **ORM (Prisma):** Ini adalah **Asisten Mekanik**. Penerjemah bahasa kode JavaScript ke bahasa database (SQL) menggunakan model `Expense` agar mesin dan bagasi bisa berkomunikasi tanpa ribet.
+1. **Aturan Domain Email Khusus:**
+   - Registrasi user hanya menerima email dengan domain resmi **`@sakuku.com`** (contoh: `zidan@sakuku.com`).
+2. **Autentikasi & Keamanan Kriptografi:**
+   - Password disimpan secara aman dalam bentuk hash menggunakan `bcryptjs`.
+   - Autentikasi stateless menggunakan `jsonwebtoken` (JWT).
+3. **Data Isolation (Multi-Tenant):**
+   - Setiap pengguna hanya dapat melihat, menambah, dan menghapus transaksi keuangan miliknya sendiri.
+4. **Validasi Input & Error Handling:**
+   - Penanganan error terstruktur untuk email duplikat, token kadaluwarsa, atau kegagalan request.
 
 ---
 
-## 📁 Struktur Folder Proyek V1
-
-Koleksi berkas kita dibagi menjadi dua rumah besar yang saling terintegrasi:
+## 📁 Struktur Folder Backend
 
 ```text
-sakuku/
-├── backend/               # 🚂 RUMAH MESIN (BACKEND)
-│   ├── prisma/            # Cetak biru tabel database (schema.prisma) & Migrasi
-│   └── src/
-│       ├── controllers/   # Otak pemroses logika (CRUD Expense)
-│       ├── routes/        # Jalur gerbang API (/api/transactions)
-│       └── index.js       # Saklar utama untuk menyalakan server backend
-├── frontend/
+backend/
+├── prisma/
+│   ├── schema.prisma       # Schema database (User & Expense)
+│   └── migrations/         # Riwayat migrasi database MariaDB
+├── src/
+│   ├── controllers/        # Otak logika bisnis (authController & expenseController)
+│   ├── middlewares/        # Validasi JWT Token (authMiddleware)
+│   ├── routes/             # Pemetaan endpoint (/api/auth & /api/expenses)
+│   └── index.js            # Entry point & saklar server Express
+├── .env                    # Variabel lingkungan (Database URL & JWT Secret)
+└── package.json
 ```

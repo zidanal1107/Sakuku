@@ -1,45 +1,50 @@
-# 📱 SakuKu Frontend - V1
+# 📱 SakuKu Frontend - V1.5
 
-Selamat datang di repositori _frontend_ **SakuKu**, sebuah aplikasi dasbor pencatat keuangan personal yang modern, bersih, dan interaktif. SakuKu membantu pengguna melacak uang masuk (_income_) dan uang keluar (_expense_) secara real-time dengan visualisasi data yang informatif.
+Selamat datang di repositori _frontend_ **SakuKu**, dasbor pencatat keuangan pribadi modern, interaktif, dan aman. Aplikasi ini dibangun dengan React untuk memberikan pengalaman mengelola keuangan secara _real-time_ dengan antarmuka yang ramah pengguna.
 
 ---
 
-## ✨ Fitur Utama (V1)
+## ✨ Fitur Utama (Terbaru)
 
-- **Dasbor Ringkasan Keuangan**: Menampilkan total saldo bersih (Net), total uang masuk, dan total uang keluar dalam format Rupiah (`Rp`).
-- **Visualisasi Grafik Donat (Pie Chart)**: Grafik interaktif yang mengelompokkan pengeluaran berdasarkan kategori menggunakan pustaka Recharts.
-- **Formulir Transaksi Pintar**: Input data otomatis mendeteksi angka desimal (_Float_) dan tipe data (_income/expense_) yang diselaraskan dengan backend.
-- **Lini Masa Transaksi (Date Grouping)**: Riwayat transaksi otomatis dikelompokkan berdasarkan tanggal transaksi secara kronologis (dari yang terbaru ke terlama).
-- **Arsitektur Kebal Case-Sensitive**: Frontend dilengkapi fungsi pengaman untuk menyamakan data backend (_case-insensitive_) agar terhindar dari masalah _white screen_.
+- **Sistem Autentikasi User (JWT)**: Form Login & Register terintegrasi dengan validasi khusus domain email `@sakuku.com`.
+- **Inisialisasi Sesi Cepat & Efisien**: Menggunakan _Lazy Initial State_ untuk membaca sesi pengguna dari `localStorage` tanpa memicu _cascading re-renders_.
+- **Dasbor Ringkasan Keuangan**: Menampilkan total saldo bersih (Net Balance), total uang masuk, dan total uang keluar dalam format Rupiah (`Rp`).
+- **Visualisasi Tren Keuangan Harian (Line Chart)**: Grafik garis interaktif menggunakan Recharts untuk membandingkan pergerakan uang masuk (Hijau) dan uang keluar (Merah) per tanggal.
+- **Formulir Transaksi Pintar**: Formulir pencatatan yang mudah dipahami dengan konversi otomatis ke format nilai nominal backend.
+- **Lini Masa Transaksi Terkelompok**: Riwayat transaksi yang dikelompokkan secara otomatis berdasarkan hari/tanggal kronologis.
+- **Manajemen Sesi Otomatis**: Dilengkapi Axios Interceptor yang otomatis membersihkan sesi dan melakukan _redirect_ ke halaman Login jika token JWT kadaluwarsa.
 
 ---
 
 ## 🛠️ Teknologi yang Digunakan
 
-- **Framework**: [React.js](https://react.dev/) (Vite sebagai build tool)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) (Utility-first CSS framework)
-- **Grafik/Charts**: [Recharts](https://recharts.org/) (Composability chart library untuk React)
-- **HTTP Client**: [Axios](https://axios-http.com/) (Untuk komunikasi data dengan API Backend)
+- **Framework**: [React.js](https://react.dev/) (menggunakan Vite sebagai _build tool_)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Visualisasi Data**: [Recharts](https://recharts.org/) (Komponen LineChart, Line, XAxis, YAxis, Tooltip, Legend)
+- **HTTP Client**: [Axios](https://axios-http.com/) (Komunikasi API dengan Interceptor Token Bearer)
 
 ---
 
-## 📁 Struktur Folder Utama
+## 📁 Struktur Folder Frontend
 
 ```text
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── ExpenseChart.jsx      # Komponen Pie Chart Recharts
-│   │   ├── TransactionForm.jsx   # Formulir tambah data keuangan
-│   │   └── TransactionList.jsx   # Tabel riwayat terkelompok per tanggal
+│   │   ├── ExpenseChart.jsx      # Komponen Line Chart Perbandingan Harian
+│   │   ├── TransactionForm.jsx   # Formulir penambahan transaksi baru
+│   │   ├── TransactionList.jsx   # Tabel riwayat terkelompok per tanggal
+│   │   ├── Login.jsx             # Form Login pengguna
+│   │   ├── Register.jsx          # Form Registrasi akun baru (@sakuku.com)
+│   │   └── Navbar.jsx            # Bar navigasi & tombol Logout
 │   ├── hooks/
-│   │   └── useTransactions.js    # Custom Hook pengelola state & API Axios
-│   ├── utils/
-│   │   └── formatCurrency.js     # Fungsi helper format Rupiah (IDR)
+│   │   └── useTransactions.js    # Custom Hook pengelola state & request API
 │   ├── services/
-│   │   └── api.js                # Konfigurasi dasar Axios (Base URL)
-│   ├── App.jsx                   # Komponen utama & kalkulator matematika saldo
-│   └── main.jsx                  # Root entry point React
+│   │   └── api.js                # Konfigurasi Axios Base URL & Interceptor Auth
+│   ├── utils/
+│   │   └── formatCurrency.js     # Helper format angka ke mata uang Rupiah (IDR)
+│   ├── App.jsx                   # Komponen Utama, Manajemen Router/Auth, & State Keuangan
+│   └── main.jsx                  # Root Entry Point React
 ├── package.json
 └── README.md
 ```
