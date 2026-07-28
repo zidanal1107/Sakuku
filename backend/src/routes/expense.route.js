@@ -4,13 +4,14 @@ import {
   createExpense,
   deleteExpense,
 } from "../controllers/expense.controller.js";
-import authenticateToken from "../middlewares/auth.middleware.js"; // Import middleware JWT
+import authenticateToken from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-// Pasang authenticateToken di semua rute transaksi
-router.get("/", authenticateToken, getExpenses);
-router.post("/", authenticateToken, createExpense);
-router.delete("/:id", authenticateToken, deleteExpense);
+router.use(authenticateToken);
+
+router.get("/", getExpenses);
+router.post("/", createExpense);
+router.delete("/:id", deleteExpense);
 
 export default router;

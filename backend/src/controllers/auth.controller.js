@@ -51,6 +51,17 @@ export const register = async (req, res) => {
       },
     });
 
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      },
+    );
+
     res.status(201).json({
       message: "Registrasi berhasil! Silakan login.",
       user: newUser,
